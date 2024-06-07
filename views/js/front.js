@@ -27,28 +27,42 @@
  */
 
 document.addEventListener("DOMContentLoaded", function () {
+    updateTotalAmount();
+});
+
+function updateTotalAmount() {
     const form = document.querySelector("#grid_combinations");
+    const formData = new FormData(form);
+    const quantities = [];
 
-    /* form.addEventListener("submit", (event) => {
-        event.preventDefault();
-
-        const formData = new FormData(form);
-        console.log(formData);
-        const quantities = [];
-
-        formData.forEach(function (value, key) {
-			console.log(key)
-            if (key.startsWith("quantities")) {
-                const id_product_attribute = key.match(/quantities\[(\d+)\]/)[1];
+    formData.forEach(function (value, key) {
+        if (value > 0) {
+            if (key.startsWith("combinations")) {
+                const id_product_attribute = key.match(
+                    /combinations\[(\d+)\]/,
+                )[1];
                 if (id_product_attribute) {
+                    const combination = document.querySelector(
+                        `#product_attribute_${id_product_attribute}`,
+                    );
                     quantities.push({
                         id_product_attribute: id_product_attribute,
+                        price: combination.dataset.price,
                         quantity: value,
                     });
                 }
             }
-        });
+        }
+    });
+    totalPrice = 0;
 
-        console.log(quantities);
-    }); */
-});
+    quantities.forEach(function (item) {
+        // Calculez le prix total pour cet élément (prix * quantité)
+        var itemTotalPrice = item.price * item.quantity;
+
+        // Ajoutez le prix total au prix total général
+        totalPrice += itemTotalPrice;
+    });
+
+    document.querySelector("#total").innerHTML = totalPrice.toFixed(2);
+}

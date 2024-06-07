@@ -1,13 +1,14 @@
 {block name='product_combinations_grid'}
 
 <div class="product-combinations-grid">
-    <form action="{$link->getModuleLink('gridcombinations', 'form')}" method="post" id="grid_combinations" name="grid_combinations">
+    <form action="{$link->getModuleLink('gridcombinations', 'form')}" method="post" id="grid_combinations"
+        name="grid_combinations">
         <div
-            style="display: flex; justify-content: space-between; align-items: center; background: #f4f4f4; padding: 20px;">
+            style="display: flex; justify-content: space-between; align-items: center; background: #ebebeb; padding: 20px;">
             <span>{$product.name}</span>
-            <div>
-                Total :
-            </div>
+            <b style="color: #133370;">
+                MONTANT TOTAL : <span id="total">{0|string_format:"%.2f"}</span> €
+            </b>
             <button class="btn btn-primary add-to-cart" id="submit_grid_combinations" name="submit_grid_combinations"
                 type="submit">Ajouter au panier</button>
 
@@ -16,7 +17,8 @@
         <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th class="header-item" colspan="2"></th>
+                    <th class="header-item"></th>
+                    <th class="header-item"></th>
                     {foreach from=$sizes item=size}
                     <th class="header-item">{$size.name}</th>
                     {/foreach}
@@ -52,8 +54,12 @@
                         <div><b
                                 style="color: {if $combination.quantity == 0} #de6736; {else} #133370;{/if}">{$combination.quantity}</b>
                         </div>
-                        <div style="display: flex; justify-content: center;"><input class="input-group input-grid"
-                                type="number" id="combinations[{$key}]" name="combinations[{$key}]" placeholder="{$size.name}" min="0">
+                        <div style="display: flex; justify-content: center;">
+                            <input
+                                class="input-group {if $combination.quantity == 0} input-grid-disabled {else} input-grid {/if}"
+                                type="number" id="product_attribute_{$key}" name="combinations[{$key}]"
+                                data-price="{$current_prices[$key]}" placeholder="{$size.name}" min="0" {if
+                                $combination.quantity==0} disabled {/if} onchange="updateTotalAmount()">
                         </div>
 
                         <div><b style="color: #2c698d;">
@@ -102,6 +108,18 @@
         width: 70px;
         font-size: 16px;
         background: #fff;
+        -moz-appearance: textfield;
+        -webkit-appearance: textfield;
+        margin: 10px 0;
+    }
+
+    .input-grid-disabled {
+        height: 40px;
+        border: 1px solid #979797 !important;
+        border-radius: 0;
+        text-align: center;
+        width: 70px;
+        font-size: 16px;
         -moz-appearance: textfield;
         -webkit-appearance: textfield;
         margin: 10px 0;

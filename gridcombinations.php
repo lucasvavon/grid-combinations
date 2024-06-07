@@ -61,7 +61,8 @@ class Gridcombinations extends Module
     {
         return parent::install() &&
             $this->registerHook('header') &&
-            $this->registerHook('displayFooterProduct');
+            $this->registerHook('displayFooterProduct') &&
+            $this->registerHook('displayProductAdditionalInfo');
     }
 
     public function uninstall()
@@ -75,36 +76,25 @@ class Gridcombinations extends Module
     public function hookDisplayFooterProduct($params)
     {
         $product = new Product((int) $params['product']['id'], false, Context::getContext()->language->id);
+
         if ($product->hasAttributes()) {
 
-            $ids_product_attribute = Db::getInstance()->executeS('SELECT pa.id_product_attribute FROM ' . _DB_PREFIX_ . 'product_attribute pa WHERE pa.id_product = ' . $product->id);
-            foreach ($ids_product_attribute as $value) {
-                $current_prices[$value['id_product_attribute']] = Product::getPriceStatic($product->id, true, $value['id_product_attribute']);
-            }
+            $attribute_groups = $this->getAttributeGroups($product->id);
 
-            $groups = Db::getInstance()->executeS('SELECT DISTINCT ag.id_attribute_group, ag.is_color_group
-            FROM ' . _DB_PREFIX_ . 'product_attribute_combination pac
-            JOIN ' . _DB_PREFIX_ . 'attribute a ON pac.id_attribute = a.id_attribute
-            JOIN ' . _DB_PREFIX_ . 'attribute_group ag ON a.id_attribute_group = ag.id_attribute_group
-            WHERE pac.id_product_attribute IN (
-                SELECT id_product_attribute
-                FROM ' . _DB_PREFIX_ . 'product_attribute
-                WHERE id_product = ' . $product->id . '
-            );');
+            if (!empty($attribute_groups) && sizeof($attribute_groups) == 2) {
+                if ($attribute_groups[0]['is_color_group'] || $attribute_groups[1]['is_color_group']) {
 
-            if (sizeof($groups) == 2) {
-                if ($groups[0]['is_color_group'] || $groups[1]['is_color_group']) {
-                    foreach ($groups as $group) {
+                    foreach ($attribute_groups as $group) {
                         if ($group['is_color_group']) {
                             $colors = Db::getInstance()->executeS('SELECT a.id_attribute, al.name, a.color as hex, pa.id_product_attribute
-                        FROM ' . _DB_PREFIX_ . 'attribute a 
-                        JOIN ' . _DB_PREFIX_ . 'attribute_lang al ON a.id_attribute = al.id_attribute 
-                        JOIN ' . _DB_PREFIX_ . 'product_attribute_combination pac ON a.id_attribute = pac.id_attribute
-                        JOIN ' . _DB_PREFIX_ . 'product_attribute pa ON pac.id_product_attribute = pa.id_product_attribute
-                        JOIN ' . _DB_PREFIX_ . 'product_attribute_image pai ON pa.id_product_attribute = pai.id_product_attribute
-                        WHERE a.id_attribute_group = ' . $group['id_attribute_group'] . '
-                        AND pa.id_product = ' . $product->id . '
-                        GROUP BY a.position;'
+                                FROM ' . _DB_PREFIX_ . 'attribute a 
+                                JOIN ' . _DB_PREFIX_ . 'attribute_lang al ON a.id_attribute = al.id_attribute 
+                                JOIN ' . _DB_PREFIX_ . 'product_attribute_combination pac ON a.id_attribute = pac.id_attribute
+                                JOIN ' . _DB_PREFIX_ . 'product_attribute pa ON pac.id_product_attribute = pa.id_product_attribute
+                                JOIN ' . _DB_PREFIX_ . 'product_attribute_image pai ON pa.id_product_attribute = pai.id_product_attribute
+                                WHERE a.id_attribute_group = ' . $group['id_attribute_group'] . '
+                                AND pa.id_product = ' . $product->id . '
+                                GROUP BY a.position;'
                             );
 
                             foreach ($colors as &$color) {
@@ -116,25 +106,38 @@ class Gridcombinations extends Module
                             }
                         } else {
                             $sizes = Db::getInstance()->executeS('SELECT a.id_attribute, al.name
-                        FROM ' . _DB_PREFIX_ . 'attribute a 
-                        JOIN ' . _DB_PREFIX_ . 'attribute_lang al ON a.id_attribute = al.id_attribute 
-                        JOIN ' . _DB_PREFIX_ . 'product_attribute_combination pac ON a.id_attribute = pac.id_attribute
-                        JOIN ' . _DB_PREFIX_ . 'product_attribute pa ON pac.id_product_attribute = pa.id_product_attribute
-                        WHERE a.id_attribute_group = ' . $group['id_attribute_group'] . '
-                        AND pa.id_product = ' . $product->id . '
-                        GROUP BY a.id_attribute;');
+                                FROM ' . _DB_PREFIX_ . 'attribute a 
+                                JOIN ' . _DB_PREFIX_ . 'attribute_lang al ON a.id_attribute = al.id_attribute 
+                                JOIN ' . _DB_PREFIX_ . 'product_attribute_combination pac ON a.id_attribute = pac.id_attribute
+                                JOIN ' . _DB_PREFIX_ . 'product_attribute pa ON pac.id_product_attribute = pa.id_product_attribute
+                                WHERE a.id_attribute_group = ' . $group['id_attribute_group'] . '
+                                AND pa.id_product = ' . $product->id . '
+                                GROUP BY a.id_attribute;');
                         }
                     }
+
+                    $this->context->smarty->assign('isCompatibleWithGridCombinations', true);
+                } else {
+                    $this->context->smarty->assign('isCompatibleWithGridCombinations', false);
                 }
 
 
                 $this->context->smarty->assign('colors', $colors);
                 $this->context->smarty->assign('sizes', $sizes);
-                $this->context->smarty->assign('current_prices', $current_prices);
+
+                if (!empty($this->getCombinationsPrice($product->id))) {
+                    $this->context->smarty->assign('current_prices', $this->getCombinationsPrice($product->id));
+                }
 
                 return $this->display(__FILE__, 'views/templates/hook/grid-combinations.tpl');
             }
         }
+    }
+
+    public function hookDisplayProductAdditionalInfo($params)
+    {
+        if ($this->isCompatibleWithGridCombinations((int) $params['product']['id']))
+            return $this->display(__FILE__, 'views/templates/hook/fast-order.tpl');
     }
 
     /**
@@ -144,5 +147,42 @@ class Gridcombinations extends Module
     {
         $this->context->controller->addJS($this->_path . '/views/js/front.js');
         $this->context->controller->addCSS($this->_path . '/views/css/front.css');
+    }
+
+    private function getCombinationsPrice($id_product)
+    {
+        $ids_product_attribute = Db::getInstance()->executeS('SELECT pa.id_product_attribute FROM ' . _DB_PREFIX_ . 'product_attribute pa WHERE pa.id_product = ' . (int) $id_product);
+        foreach ($ids_product_attribute as $value) {
+            $current_prices[$value['id_product_attribute']] = Product::getPriceStatic((int) $id_product, true, (int) $value['id_product_attribute']);
+        }
+
+        return $current_prices;
+    }
+
+    private function getAttributeGroups($id_product)
+    {
+        return Db::getInstance()->executeS('SELECT DISTINCT ag.id_attribute_group, ag.is_color_group
+            FROM ' . _DB_PREFIX_ . 'product_attribute_combination pac
+            JOIN ' . _DB_PREFIX_ . 'attribute a ON pac.id_attribute = a.id_attribute
+            JOIN ' . _DB_PREFIX_ . 'attribute_group ag ON a.id_attribute_group = ag.id_attribute_group
+            WHERE pac.id_product_attribute IN (
+                SELECT id_product_attribute
+                FROM ' . _DB_PREFIX_ . 'product_attribute
+                WHERE id_product = ' . (int) $id_product . '
+            );');
+    }
+
+    private function isCompatibleWithGridCombinations($id_product)
+    {
+        $attribute_groups = $this->getAttributeGroups((int) $id_product);
+
+        if (!empty($attribute_groups) && sizeof($attribute_groups) == 2) {
+            foreach ($attribute_groups as $group) {
+                if ($group['is_color_group']) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -40,11 +40,12 @@ class GridCombinationsFormModuleFrontController extends ModuleFrontController
 
                 foreach ($combinations as $id_product_attribute => $quantity) {
 
-                    $cart->update();
-                    $cart = $this->context->cart;
-                    $updateQuantity = $cart->updateQty((int) ($quantity), (int) ($id_product), (int) ($id_product_attribute), false);
-
-                    $cart->update();
+                    if (is_numeric($quantity) && $quantity != 0) {
+                        $cart->update();
+                        $cart = $this->context->cart;
+                        $cart->updateQty((int) ($quantity), (int) ($id_product), (int) ($id_product_attribute), false);
+                        $cart->update();
+                    }
 
                 }
             }
