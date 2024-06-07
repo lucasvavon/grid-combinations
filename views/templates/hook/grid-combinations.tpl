@@ -1,24 +1,22 @@
 {block name='product_combinations_grid'}
 
 <div class="product-combinations-grid">
-    <form action="" method="post" id="grid_combinations">
-        <h2>Available Combinations</h2>
-
+    <form action="{$link->getModuleLink('gridcombinations', 'form')}" method="post" id="grid_combinations" name="grid_combinations">
         <div
             style="display: flex; justify-content: space-between; align-items: center; background: #f4f4f4; padding: 20px;">
+            <span>{$product.name}</span>
             <div>
                 Total :
             </div>
-            <div>
-                <button class="btn btn-primary add-to-cart" id="submit_grid_combinations" type="submit">Ajouter au
-                    panier</button>
-            </div>
+            <button class="btn btn-primary add-to-cart" id="submit_grid_combinations" name="submit_grid_combinations"
+                type="submit">Ajouter au panier</button>
+
         </div>
-        <table class="table table-bordered" id="tablecombz-table">
+        <input id="id_product" name="id_product" value="{$product.id}" hidden>
+        <table class="table table-bordered">
             <thead>
                 <tr>
-                    <th class="header-item"></th>
-                    <th class="header-item"></th>
+                    <th class="header-item" colspan="2"></th>
                     {foreach from=$sizes item=size}
                     <th class="header-item">{$size.name}</th>
                     {/foreach}
@@ -28,10 +26,11 @@
                 {foreach from=$colors item=color}
                 <tr>
                     <th class="header-item">
-                        <div>
-                            <div>{$color.name}</div>
-                            <div><img src="{$color.image_link}"></div>
-                        </div>
+
+                        <p>{$color.name}</p>
+
+                        <img src="{$color.image_link}">
+
                     </th>
                     <td>
                         <div style="display: flex; flex-direction: column; align-items: flex-end;">
@@ -50,9 +49,11 @@
 
                         {if reset($sorted_attributes) == $size.name && end($sorted_attributes) ==
                         $color.name}
-                        <div><b style="color: {if $combination.quantity == 0} #de6736; {else} #133370;{/if}">{$combination.quantity}</b></div>
-                        <div><input class="input-group input-grid" type="number" name="quantities[{$key}]" value="0"
-                                min="0">
+                        <div><b
+                                style="color: {if $combination.quantity == 0} #de6736; {else} #133370;{/if}">{$combination.quantity}</b>
+                        </div>
+                        <div style="display: flex; justify-content: center;"><input class="input-group input-grid"
+                                type="number" id="combinations[{$key}]" name="combinations[{$key}]" placeholder="{$size.name}" min="0">
                         </div>
 
                         <div><b style="color: #2c698d;">
@@ -66,7 +67,6 @@
                 {/foreach}
             </tbody>
         </table>
-
     </form>
 </div>
 
@@ -83,6 +83,7 @@
         border: .3125rem solid #ebebeb !important;
         text-align: center;
         vertical-align: middle;
+        width: fit-content;
     }
 
     td {

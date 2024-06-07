@@ -93,7 +93,7 @@ class Gridcombinations extends Module
             );');
 
             if (sizeof($groups) == 2) {
-                if ($group[0]['is_color_group'] || $group[1]['is_color_group']) {
+                if ($groups[0]['is_color_group'] || $groups[1]['is_color_group']) {
                     foreach ($groups as $group) {
                         if ($group['is_color_group']) {
                             $colors = Db::getInstance()->executeS('SELECT a.id_attribute, al.name, a.color as hex, pa.id_product_attribute

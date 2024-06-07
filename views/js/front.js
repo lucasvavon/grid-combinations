@@ -27,45 +27,28 @@
  */
 
 document.addEventListener("DOMContentLoaded", function () {
-	const form = document.querySelector("#grid_combinations");
-	console.log(form);
+    const form = document.querySelector("#grid_combinations");
 
-	form.addEventListener("submit", (event) => {
-		event.preventDefault();
+    /* form.addEventListener("submit", (event) => {
+        event.preventDefault();
 
-		const formData = new FormData(form);
-		console.log(formData);
-		const quantities = {};
+        const formData = new FormData(form);
+        console.log(formData);
+        const quantities = [];
 
-		formData.forEach(function (value, key) {
-			if (key.startsWith("quantities")) {
-				const keys = key.match(/quantities\[(\d+)\]\[(\d+)\]/);
-				if (keys) {
-					const sizeId = keys[1];
-					const colorId = keys[2];
-					if (!quantities[sizeId]) {
-						quantities[sizeId] = {};
-					}
-					quantities[sizeId][colorId] = value;
-				}
-			}
-		});
+        formData.forEach(function (value, key) {
+			console.log(key)
+            if (key.startsWith("quantities")) {
+                const id_product_attribute = key.match(/quantities\[(\d+)\]/)[1];
+                if (id_product_attribute) {
+                    quantities.push({
+                        id_product_attribute: id_product_attribute,
+                        quantity: value,
+                    });
+                }
+            }
+        });
 
-		console.log(quantities);
-
-		fetch(form.action, {
-			method: "POST",
-			body: quantities,
-		})
-			.then((response) => response.json())
-			.then((data) => {
-				// handle the response data here
-			})
-			.catch((error) => {
-				console.error("Error:", error);
-			});
-
-		// Submit the form after logging
-		/* form.submit(); */
-	});
+        console.log(quantities);
+    }); */
 });
